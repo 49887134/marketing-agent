@@ -1,0 +1,6 @@
+{
+  "name": "marketing-agent-local-toolchain",
+  "private": true,
+  "description": "仓库内 Node 工具链，不修改系统全局 Node",
+  "dependencies": { "node": "22.22.0" }
+}

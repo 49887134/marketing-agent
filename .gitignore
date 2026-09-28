@@ -1,0 +1,12 @@
+frontend/node_modules/
+.tools/node_modules/
+frontend/dist/
+frontend/test-results/
+backend/.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.local
+*.log
+artifacts/
