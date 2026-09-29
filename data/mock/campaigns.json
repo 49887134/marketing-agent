@@ -187,5 +187,365 @@
     "clicks": 96,
     "cost": "220.80",
     "conversions": 3
+  },
+  {
+    "date": "2026-09-08",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 1960,
+    "clicks": 49,
+    "cost": "78.40",
+    "conversions": 2
+  },
+  {
+    "date": "2026-09-08",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 2960,
+    "clicks": 74,
+    "cost": "144.30",
+    "conversions": 2
+  },
+  {
+    "date": "2026-09-08",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 3960,
+    "clicks": 99,
+    "cost": "227.70",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-09",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2080,
+    "clicks": 52,
+    "cost": "83.20",
+    "conversions": 2
+  },
+  {
+    "date": "2026-09-09",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3080,
+    "clicks": 77,
+    "cost": "150.15",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-09",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4080,
+    "clicks": 102,
+    "cost": "234.60",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-10",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2200,
+    "clicks": 55,
+    "cost": "88.00",
+    "conversions": 2
+  },
+  {
+    "date": "2026-09-10",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3200,
+    "clicks": 80,
+    "cost": "156.00",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-10",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4200,
+    "clicks": 105,
+    "cost": "241.50",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-11",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2320,
+    "clicks": 58,
+    "cost": "92.80",
+    "conversions": 2
+  },
+  {
+    "date": "2026-09-11",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3320,
+    "clicks": 83,
+    "cost": "161.85",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-11",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4320,
+    "clicks": 108,
+    "cost": "248.40",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-12",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2440,
+    "clicks": 61,
+    "cost": "97.60",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-12",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3440,
+    "clicks": 86,
+    "cost": "167.70",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-12",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4440,
+    "clicks": 111,
+    "cost": "255.30",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-13",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2560,
+    "clicks": 64,
+    "cost": "102.40",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-13",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3560,
+    "clicks": 89,
+    "cost": "173.55",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-13",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4560,
+    "clicks": 114,
+    "cost": "262.20",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-14",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2680,
+    "clicks": 67,
+    "cost": "107.20",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-14",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3680,
+    "clicks": 92,
+    "cost": "179.40",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-14",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4680,
+    "clicks": 117,
+    "cost": "269.10",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-15",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2800,
+    "clicks": 70,
+    "cost": "112.00",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-15",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3800,
+    "clicks": 95,
+    "cost": "185.25",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-15",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4800,
+    "clicks": 120,
+    "cost": "276.00",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-16",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 2920,
+    "clicks": 73,
+    "cost": "116.80",
+    "conversions": 3
+  },
+  {
+    "date": "2026-09-16",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 3920,
+    "clicks": 98,
+    "cost": "191.10",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-16",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 4920,
+    "clicks": 123,
+    "cost": "282.90",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-17",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 3040,
+    "clicks": 76,
+    "cost": "121.60",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-17",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 4040,
+    "clicks": 101,
+    "cost": "196.95",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-17",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 5040,
+    "clicks": 126,
+    "cost": "289.80",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-18",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 3160,
+    "clicks": 79,
+    "cost": "126.40",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-18",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 4160,
+    "clicks": 104,
+    "cost": "202.80",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-18",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 5160,
+    "clicks": 129,
+    "cost": "296.70",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-19",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 3280,
+    "clicks": 82,
+    "cost": "131.20",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-19",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 4280,
+    "clicks": 107,
+    "cost": "208.65",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-19",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 5280,
+    "clicks": 132,
+    "cost": "303.60",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-20",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 3400,
+    "clicks": 85,
+    "cost": "136.00",
+    "conversions": 4
+  },
+  {
+    "date": "2026-09-20",
+    "campaign_id": "C002",
+    "campaign_name": "课程咨询推广",
+    "impressions": 4400,
+    "clicks": 110,
+    "cost": "214.50",
+    "conversions": 5
+  },
+  {
+    "date": "2026-09-20",
+    "campaign_id": "C003",
+    "campaign_name": "新客拓展计划",
+    "impressions": 5400,
+    "clicks": 135,
+    "cost": "310.50",
+    "conversions": 6
+  },
+  {
+    "date": "2026-09-21",
+    "campaign_id": "C001",
+    "campaign_name": "品牌词推广",
+    "impressions": 3520,
+    "clicks": 88,
+    "cost": "140.80",
+    "conversions": 4
   }
 ]

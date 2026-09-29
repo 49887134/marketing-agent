@@ -1,11 +1,14 @@
-"""从仓库根目录执行 python data/mock/generate.py；确定性生成教学样本。"""
+"""从仓库根目录执行 python data/mock/generate.py；确定性生成本地样本。"""
 import json
 from decimal import Decimal
 from pathlib import Path
 
 rows = []
-for day in range(1, 8):
+for day in range(1, 22):
     for index, name in enumerate(['品牌词推广', '课程咨询推广', '新客拓展计划'], 1):
+        # 保留原有 21 条记录，追加 40 条，共 61 条。
+        if len(rows) >= 61:
+            break
         impressions = 1000 * index + day * 120
         clicks = 25 * index + day * 3
         conversions = max(0, clicks // 15 - index)

@@ -8,17 +8,20 @@ client = TestClient(app)
 URL = '/api/reports/campaigns'
 
 
-def test_health_and_default_summary():
-    assert client.get('/health').json() == {'status': 'ok'}
+def test_default_summary():
     response = client.get(URL)
     assert response.status_code == 200
     data = response.json()
-    assert data['total'] == 21
+    assert data['total'] == 61
     assert len({row['campaign_id'] for row in data['items']}) == 3
-    assert len({row['date'] for row in data['items']}) == 7
+    assert len({row['date'] for row in data['items']}) == 21
     assert any(row['conversions'] == 0 for row in data['items'])
     assert any(row['conversions'] > 0 for row in data['items'])
     assert_summary(data)
+
+
+def test_health_route_is_not_exposed():
+    assert client.get('/health').status_code == 404
 
 
 def assert_summary(data):
@@ -41,7 +44,7 @@ def test_inclusive_date_and_keyword_filters():
     assert [row['date'] for row in data['items']] == ['2026-09-02', '2026-09-03', '2026-09-04']
     assert all(row['campaign_name'] == '课程咨询推广' for row in data['items'])
     assert_summary(data)
-    assert client.get(URL, params={'start_date': '2026-09-07'}).json()['total'] == 3
+    assert client.get(URL, params={'start_date': '2026-09-07'}).json()['total'] == 43
     assert client.get(URL, params={'end_date': '2026-09-01'}).json()['total'] == 3
 
 

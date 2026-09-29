@@ -6,7 +6,6 @@ import ReportTable from './components/ReportTable.vue'
 import { fetchReports } from './api/reports'
 import type { Filters, ReportResponse } from './types/reports'
 
-// 固定教学数据范围；不使用今天，确保首次打开即可看到完整样本。
 const defaults: Filters = { start_date: '2026-09-01', end_date: '2026-09-07', keyword: '' }
 const result = ref<ReportResponse | null>(null)
 const loading = ref(false)
@@ -56,12 +55,11 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
       <div class="sidebar-title">营销运营工作台<small>MARKETING AGENT</small></div>
       <div class="nav-label">运营管理</div>
       <div class="nav-active">▦ <span>投放数据看板</span></div>
-      <div class="course-note">第一阶段 · 基础搭建<br /><span>教师参考完成版</span></div>
     </aside>
     <div class="workspace">
-      <header class="topbar"><span>工作台 / 投放报表</span><span class="environment"><i></i> 本地教学环境</span></header>
+      <header class="topbar"><span>工作台 / 投放报表</span><span class="environment"><i></i> 本地运行环境</span></header>
       <main>
-        <div class="page-heading"><div><p class="eyebrow">CAMPAIGN OVERVIEW</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">查看计划每日表现，理解投放数据与核心指标。</p></div><span class="demo-badge">教学模拟数据</span></div>
+        <div class="page-heading"><div><p class="eyebrow">CAMPAIGN OVERVIEW</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">查看计划每日表现，理解投放数据与核心指标。</p></div><span class="demo-badge">本地数据</span></div>
         <ReportFilters :defaults="defaults" @query="query" />
         <div aria-live="polite" :aria-busy="loading">
           <div v-if="loading" class="panel state"><span class="spinner"></span><h2>正在加载报表…</h2><p>正在获取所选范围内的投放数据</p></div>
@@ -70,13 +68,13 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
             <MetricCards :summary="result.summary" />
             <section class="panel report-panel">
               <div class="report-heading"><div><h2>计划投放明细</h2><p>{{ applied.start_date || '不限开始日期' }} — {{ applied.end_date || '不限结束日期' }}<span v-if="applied.keyword"> · 关键词：{{ applied.keyword }}</span></p></div><span class="count">共 {{ result.total }} 条记录</span></div>
-              <div v-if="!result.items.length" class="state"><h2>暂无匹配数据</h2><p>请调整日期或计划名称关键词，或点击重置恢复教学数据范围。</p></div>
+              <div v-if="!result.items.length" class="state"><h2>暂无匹配数据</h2><p>请调整日期或计划名称关键词，或点击重置恢复默认数据范围。</p></div>
               <ReportTable v-else :items="result.items" />
               <div class="table-footnote">一条记录对应一个计划一天的数据。点击率 = 点击量 / 展现量；平均点击成本 = 消费 / 点击量，分母为 0 时显示“—”。</div>
             </section>
           </template>
         </div>
-        <footer>本页面使用本地模拟数据，仅用于课程演示，不连接真实百度推广账户。</footer>
+        <footer>数据来源：本地报表服务。</footer>
       </main>
     </div>
   </div>

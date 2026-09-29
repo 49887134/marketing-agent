@@ -8,7 +8,7 @@ export default defineConfig({
   webServer: [
     {
       command: `${process.platform === 'win32' ? '..\\backend\\.venv\\Scripts\\python.exe' : '../backend/.venv/bin/python'} -m uvicorn app.main:app --app-dir ../backend --host 127.0.0.1 --port 8000`,
-      url: 'http://127.0.0.1:8000/health', reuseExistingServer: !process.env.CI,
+      url: 'http://127.0.0.1:8000/api/reports/campaigns', reuseExistingServer: !process.env.CI,
     },
     { command: 'npm run dev', url: 'http://127.0.0.1:5173', reuseExistingServer: !process.env.CI },
   ],

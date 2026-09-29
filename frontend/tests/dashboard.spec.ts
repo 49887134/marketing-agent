@@ -3,7 +3,7 @@ import path from 'node:path'
 
 test('浏览器真实接口、筛选、空数据、零分母、重置', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('教学模拟数据', { exact: true })).toBeVisible()
+  await expect(page.getByText('本地数据', { exact: true })).toBeVisible()
   await expect(page.locator('tbody tr')).toHaveCount(21)
   await expect(page.getByLabel('汇总指标')).toContainText('2,268.10')
   await page.getByLabel('开始日期').fill('2026-09-02')
