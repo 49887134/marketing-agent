@@ -3,11 +3,13 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import ReportFilters from './components/ReportFilters.vue'
 import MetricCards from './components/MetricCards.vue'
 import ReportTable from './components/ReportTable.vue'
+import KnowledgePanel from './components/KnowledgePanel.vue'
 import { fetchReports } from './api/reports'
 import type { Filters, ReportResponse } from './types/reports'
 
 const defaults: Filters = { start_date: '2026-09-01', end_date: '2026-09-07', keyword: '' }
 const result = ref<ReportResponse | null>(null)
+const activePage = ref<'reports' | 'knowledge'>('reports')
 const loading = ref(false)
 const error = ref('')
 const applied = ref({ ...defaults })
@@ -54,12 +56,16 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
       <div class="brand-mark">M<span>·</span></div>
       <div class="sidebar-title">营销运营工作台<small>MARKETING AGENT</small></div>
       <div class="nav-label">运营管理</div>
-      <div class="nav-active">▦ <span>投放数据看板</span></div>
+      <button class="nav-button" :class="{ 'nav-active': activePage === 'reports' }" @click="activePage = 'reports'">▦ 投放数据看板</button>
+      <button class="nav-button" :class="{ 'nav-active': activePage === 'knowledge' }" @click="activePage = 'knowledge'">◈ 知识问答</button>
     </aside>
     <div class="workspace">
-      <header class="topbar"><span>工作台 / 投放报表</span><span class="environment"><i></i> 本地运行环境</span></header>
+      <header class="topbar"><span>工作台 / {{ activePage === 'reports' ? '投放报表' : '知识问答' }}</span><span class="environment"><i></i> 本地客户端</span></header>
       <main>
-        <div class="page-heading"><div><p class="eyebrow">CAMPAIGN OVERVIEW</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">查看计划每日表现，理解投放数据与核心指标。</p></div><span class="demo-badge">本地数据</span></div>
+        <div class="page-heading"><div><p class="eyebrow">{{ activePage === 'reports' ? 'CAMPAIGN OVERVIEW' : 'KNOWLEDGE ASSISTANT' }}</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">{{ activePage === 'reports' ? '查看计划每日表现，理解投放数据与核心指标。' : '检索投放知识，查看回答及其原文依据。' }}</p></div><span class="demo-badge">{{ activePage === 'reports' ? '报表数据' : '远程知识库' }}</span></div>
+        <div class="mobile-nav"><button @click="activePage = 'reports'">投放报表</button><button @click="activePage = 'knowledge'">知识问答</button></div>
+        <KnowledgePanel v-if="activePage === 'knowledge'" />
+        <div v-show="activePage === 'reports'">
         <ReportFilters :defaults="defaults" @query="query" />
         <div aria-live="polite" :aria-busy="loading">
           <div v-if="loading" class="panel state"><span class="spinner"></span><h2>正在加载报表…</h2><p>正在获取所选范围内的投放数据</p></div>
@@ -74,7 +80,8 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
             </section>
           </template>
         </div>
-        <footer>数据来源：本地报表服务。</footer>
+        </div>
+        <footer>{{ activePage === 'reports' ? '报表数据存储于远程数据库。' : '知识资料存储于远程数据库；检索与回答使用后端配置的模型服务。' }}</footer>
       </main>
     </div>
   </div>

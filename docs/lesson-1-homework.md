@@ -17,7 +17,7 @@
 
 ## 任务二：增加第四个模拟计划
 
-修改 `data/mock/generate.py` 并重新生成 `data/mock/campaigns.json`：
+修改 `data/seed/generate.py` 并重新生成 `data/seed/campaigns.json`：
 
 - 覆盖 `2026-09-01` 至 `2026-09-07`。
 - 使用新的稳定 `campaign_id` 和清晰中文名称。

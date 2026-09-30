@@ -70,7 +70,7 @@ ReportFilters.vue / submit()
 6. `backend/app/routes/reports.py`
 7. `backend/app/models.py`
 8. `backend/app/services/reports.py`
-9. `data/mock/campaigns.json`
+9. `data/seed/campaigns.json`
 10. `frontend/src/components/MetricCards.vue`
 11. `frontend/src/components/ReportTable.vue`
 12. `frontend/src/format.ts`
@@ -95,7 +95,7 @@ ReportFilters.vue / submit()
 
 ### 3–6 分钟：业务场景话术
 
-打开：`data/mock/campaigns.json`，展示同一天的 C001、C002、C003 三条记录。
+打开：`data/seed/campaigns.json`，展示同一天的 C001、C002、C003 三条记录。
 
 直接讲：
 
@@ -103,7 +103,7 @@ ReportFilters.vue / submit()
 >
 > “数据粒度是‘一个计划在一天内的数据’。当前有三个计划，覆盖连续七天，因此默认返回二十一条记录。`total` 表示日报记录数，不表示计划数。”
 >
-> “原始数据包含日期、计划 ID、计划名称、展现量、点击量、消费和转化数。点击率 CTR 和平均点击成本 CPC 没有写死在 JSON 中，而是由后端根据原始指标计算。这样计算口径集中在一处，未来数据源换成 PostgreSQL 或真实只读接口时，页面不需要复制计算逻辑。”
+> “原始数据包含日期、计划 ID、计划名称、展现量、点击量、消费和转化数。点击率 CTR 和平均点击成本 CPC 没有存成结果列，而是由后端根据原始指标计算。这样计算口径集中在一处，未来切换为真实只读接口时，页面不需要复制计算逻辑。”
 
 逐项指出：
 
@@ -139,11 +139,11 @@ conversions       转化数
 
 直接讲：
 
-> “页面首次加载时使用固定日期 2026 年 9 月 1 日到 9 月 7 日。这里没有使用今天的日期，因为本地数据范围是固定的，默认值必须与数据匹配，才能保证首屏有结果。”
+> “页面首次加载时使用固定日期 2026 年 9 月 1 日到 9 月 7 日。这里没有使用今天的日期，因为课程样本的数据范围是固定的，默认值必须与数据匹配，才能保证首屏有结果。”
 >
 > “顶部四张卡片对应展现量、点击量、消费金额和转化数；下方表格是一条计划一天的数据。右上角显示二十一条，这与三个计划乘七天一致。”
 >
-> “页面上的‘本地数据’说明当前数据来自本地报表服务。这个阶段没有连接真实百度推广账户。”
+> “页面上的‘报表数据’表示这里展示报表模块的数据。当前记录存储在远程教学数据库，但仍是课程样本，没有连接真实百度推广账户。”
 
 ### 10–12 分钟：组合筛选与重置
 
@@ -193,7 +193,7 @@ conversions       转化数
 
 直接讲：
 
-> “项目按职责分为四块。`frontend` 是 Vue、TypeScript、Vite 和 Electron 客户端；`backend` 是 FastAPI 服务；`data/mock` 存放当前报表数据；`docs` 存放接口和课程文档。”
+> “项目按职责分为四块。`frontend` 是 Vue、TypeScript、Vite 和 Electron 客户端；`backend` 是 FastAPI 服务；`data/seed` 存放用于手动入库的课程样本；`docs` 存放接口和课程文档。”
 >
 > “前端和 Electron 不是两套页面。Electron 创建桌面窗口，开发时加载 Vite 地址，构建后加载同一个 `dist` 页面。后端本阶段独立启动，两种客户端都通过 HTTP 访问它。”
 
@@ -212,7 +212,9 @@ backend/app/main.py                         FastAPI 应用初始化和 CORS
 backend/app/routes/reports.py               HTTP 路由和查询参数校验
 backend/app/models.py                       Pydantic 数据模型
 backend/app/services/reports.py             数据读取、筛选、计算和汇总
-data/mock/campaigns.json                    原始报表数据
+data/seed/campaigns.json                    手动入库的课程样本
+backend/app/database.py                     远程数据库连接边界
+backend/app/report_cli.py                   报表表初始化、入库和状态检查
 ```
 
 ### 18–21 分钟：接口契约
@@ -243,7 +245,7 @@ data/mock/campaigns.json                    原始报表数据
 >
 > “Python 的 `start_date: str | None` 表示参数可以是字符串或 None，`-> ReportResponse` 表示函数预期返回的类型。不同于普通 TypeScript interface，Pydantic `BaseModel` 会在运行时参与解析、校验和序列化。”
 >
-> “例如 `CampaignSource` 声明 `date: date` 和 `cost: Decimal`。JSON 中原本是字符串，经过 Pydantic 后会变成真正的 Python date 和 Decimal。`Field(ge=0)` 还会拒绝负数。`response_model=ReportResponse` 会校验响应并生成 OpenAPI 文档。”
+> “例如 `CampaignSource` 声明 `date: date` 和 `cost: Decimal`。数据库查询结果经过 Pydantic 后会稳定为 Python date 和 Decimal。`Field(ge=0)` 还会拒绝负数。`response_model=ReportResponse` 会校验响应并生成 OpenAPI 文档。”
 
 ### 24–25 分钟：【补充】CORS 与 Electron 安全边界
 
@@ -329,11 +331,11 @@ data/mock/campaigns.json                    原始报表数据
 
 > “models 文件描述系统里的四种数据形态。`CampaignSource` 是原始数据；`CampaignReport` 继承原始字段并增加 ctr 和 cpc；`ReportSummary` 是汇总；`ReportResponse` 是接口最外层结构。”
 >
-> “`load_campaigns()` 打开 `data/mock/campaigns.json`。`DATA_PATH` 从当前源码文件的绝对路径向上定位仓库根目录，因此不依赖终端从哪个目录启动。”
+> “`load_campaigns()` 使用共享的 `database()` 连接远程 Supabase，并查询 `marketing_agent.campaign_daily_reports`。日期和关键词条件在 SQL 中完成，参数通过绑定变量传入，避免把用户输入拼进 SQL。结果再交给 `CampaignSource.model_validate()`，把数据库行校验为 service 使用的对象。”
 >
-> “JSON 读出来的是 Python 字典。`CampaignSource.model_validate(row)` 把字典交给 Pydantic：日期字符串转成 date，金额字符串转成 Decimal，计数字段检查非负。这一步相当于把不可信的外部数据变成 service 可以放心使用的领域对象。”
+> “SQLAlchemy 的 `mappings()` 把查询结果变成类似字典的行。`CampaignSource.model_validate()` 再交给 Pydantic 校验：数据库 date 保持日期类型，numeric 转成 Decimal，计数字段检查非负。这让 service 后续使用稳定的数据结构。”
 >
-> “列表推导式 `[CampaignSource.model_validate(row) for row in json.load(source)]` 可以按普通循环理解：遍历每条 JSON，校验后放入新列表。”
+> “列表推导式 `[CampaignSource.model_validate(dict(row)) for row in rows]` 可以按普通循环理解：遍历每条查询结果，校验后放入新列表。”
 
 ### 40–43 分钟：筛选、比率和汇总
 
@@ -343,7 +345,7 @@ data/mock/campaigns.json                    原始报表数据
 
 > “`get_campaign_reports()` 是本阶段核心业务函数。它不关心 HTTP，也不关心 Vue，只接收已经解析好的日期和关键词，返回 `ReportResponse`。第三课封装 Agent 工具时，可以复用这层，而不需要模拟浏览器请求。”
 >
-> “关键词先 `strip().casefold()`，去掉两端空白并统一大小写比较。筛选条件用列表推导式组合：开始日期为空就不限下界，否则要求大于等于；结束日期为空就不限上界，否则要求小于等于；名称包含关键词。之后按 date 和 campaign_id 排序。”
+> “关键词先 `strip()` 去掉两端空白。`load_campaigns()` 动态组合日期条件，并用 PostgreSQL 的 `strpos(lower(campaign_name), lower(:keyword)) > 0` 做名称子串匹配；`:keyword` 是绑定参数。SQL 最后按日期和计划 ID 排序。”
 >
 > “每一行通过 `ratios()` 计算 CTR 和 CPC。CTR 是点击量除以展现量，接口返回小数；CPC 是消费除以点击量，单位是人民币元。分母为零时返回 None，最终 JSON 是 null，页面显示破折号。”
 >
@@ -448,7 +450,7 @@ import { integer, money, percent } from '../format'
 
 > “最后把整条请求再串一次。用户提交表单，`ReportFilters.submit()` 发出 query 事件；`App.query()` 管理校验、加载、错误和结果；`fetchReports()` 拼查询参数并发送 GET；FastAPI 的 `campaigns()` 接收参数，`parse_date()` 校验日期；`get_campaign_reports()` 调用 `load_campaigns()` 读取 Pydantic 对象，再筛选、计算和汇总；`ReportResponse` 序列化返回；App 写入 result，卡片和表格随响应式状态更新。”
 >
-> “这条链路里，组件负责交互和展示，请求模块负责 HTTP，route 负责协议边界，model 负责运行时数据约束，service 负责业务规则，JSON 只是当前数据源。每层职责清楚以后，排错就能沿链路定位，而不是到处改代码。”
+> “这条链路里，组件负责交互和展示，请求模块负责 HTTP，route 负责协议边界，model 负责运行时数据约束，service 负责数据库查询和业务规则。`data/seed` 只负责教师手动准备课程样本。每层职责清楚以后，排错就能沿链路定位，而不是到处改代码。”
 
 ### 56–58 分钟：与最终项目衔接
 

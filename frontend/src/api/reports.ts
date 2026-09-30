@@ -17,8 +17,14 @@ export async function fetchReports(filters: Filters, signal: AbortSignal): Promi
   if (!response.ok) {
     const body = await response.json().catch(() => null)
     const detail = body?.detail
-    const message = typeof detail === 'string' ? detail : '请检查日期及关键词（最多 100 字）。'
-    throw new Error(response.status === 422 ? message : `报表请求失败（HTTP ${response.status}），请稍后重试。`)
+    const message = typeof detail === 'string'
+      ? detail
+      : typeof detail?.message === 'string'
+        ? detail.message
+        : '请检查日期及关键词（最多 100 字）。'
+    throw new Error(response.status === 422 || typeof detail?.message === 'string'
+      ? message
+      : `报表请求失败（HTTP ${response.status}），请稍后重试。`)
   }
   return response.json() as Promise<ReportResponse>
 }

@@ -1,4 +1,4 @@
-"""从仓库根目录执行 python data/mock/generate.py；确定性生成本地样本。"""
+"""从仓库根目录执行 python data/seed/generate.py；确定性生成报表 seed。"""
 import json
 from decimal import Decimal
 from pathlib import Path

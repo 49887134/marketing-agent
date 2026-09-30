@@ -1,11 +1,34 @@
+import json
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.models import CampaignSource
+from app.services import reports as report_service
 
 client = TestClient(app)
 URL = '/api/reports/campaigns'
+
+
+@pytest.fixture(autouse=True)
+def use_seed_data(monkeypatch):
+    """Keep report unit tests deterministic and independent of the remote database."""
+    seed_path = Path(__file__).resolve().parents[2] / 'data' / 'seed' / 'campaigns.json'
+    rows = [CampaignSource.model_validate(row) for row in json.loads(seed_path.read_text(encoding='utf-8'))]
+
+    def load_campaigns(start_date: date | None, end_date: date | None, keyword: str):
+        normalized_keyword = keyword.strip().casefold()
+        return [
+            row for row in rows
+            if (start_date is None or row.date >= start_date)
+            and (end_date is None or row.date <= end_date)
+            and (not normalized_keyword or normalized_keyword in row.campaign_name.casefold())
+        ]
+
+    monkeypatch.setattr(report_service, 'load_campaigns', load_campaigns)
 
 
 def test_default_summary():

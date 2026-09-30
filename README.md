@@ -1,12 +1,21 @@
 # 百度营销智能运营 Agent
 
-第一节课的**教师参考完成版**：可在浏览器与 Electron 中运行的中文投放数据看板。所有数据都是**教学模拟数据**，没有连接真实百度推广账户，不执行真实调价。本课帮助学员把已有 Vue / TypeScript / Electron 基础与 Python HTTP 服务连接起来。
+第一、二节课的**教师参考实现**：浏览器与 Electron 投放数据看板，以及基于远程 Supabase/pgvector 的知识检索与 RAG 问答。报表使用**教学模拟数据**，知识文档为教学整理资料，没有连接真实百度推广账户，不执行真实调价。
 
-已实现：日期和计划名称筛选、查询/重置、四项汇总、每日明细、加载/空数据/失败/重试、重复请求防覆盖、参数校验、Decimal 金额计算及自动化验证。未实现：RAG、大模型、PostgreSQL/pgvector、LangGraph、权限系统、Docker、桌面安装包、后端自动打包、微调、OCR/VLM。后续规划见 [项目路线图](docs/project-roadmap.md)。
+已实现：报表筛选与汇总、异常状态、Decimal 计算；知识文档切分、Embedding 接口、远程 pgvector 存储与检索、Chat 生成接口、引用 ID 校验、知识问答页面和启动脚本。**2026-09-30 已用真实千帆模型与 Supabase 完成入库、重复入库、三组问答及 top_k 对比验证：4 份文档、17 个片段，向量 384 维。** 具体证据及 TLS 边界见第二课验证记录。未实现：LangGraph、权限系统、Docker 部署、桌面安装包、后端自动打包、微调、OCR/VLM。后续规划见 [项目路线图](docs/project-roadmap.md)。
+
+## 第二课先看这里
+
+- [运行与配置](docs/lesson-2-run.md)：教师配置 Supabase 和两个独立模型服务，手动初始化、入库及真实验证。
+- [60 分钟教师指南](docs/lesson-2-guide.md)：演示 → 原理与代码 → 学员运行 → 观察与答疑，不安排复盘和作业。
+- [学生运行说明](docs/student-readme.md)：学员使用已入库远程知识库；真实 .env 由教师单独提供。
+- [知识接口](docs/knowledge-api.md)、[第二课验证记录](docs/lesson-2-verification.md)：接口字段与实际验证边界。
+
+在项目根目录运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action install` 安装锁定依赖；分别用 `-Action backend` 和 `-Action frontend` 启动。详情与前置条件见运行说明。学生包清单由 `scripts/lesson2-package-files.json` 维护；本轮待教师确认全部功能后再生成压缩包。
 
 ## 技术栈与目录
 
-Vue 3 Composition API + TypeScript + Vite，使用原生 HTML/CSS 实现轻量管理后台；Electron 复用同一套页面；Python + FastAPI + Pydantic 提供只读模拟报表。
+Vue 3 Composition API + TypeScript + Vite，使用原生 HTML/CSS 实现轻量管理后台；Electron 复用同一套页面；Python + FastAPI + Pydantic 提供报表与知识问答接口；Supabase PostgreSQL/pgvector 存储课程样本报表和知识向量。
 
 ```text
 .tools/                 仓库内 Node 22 工具链及锁文件
@@ -23,8 +32,8 @@ backend/
   app/models.py        数据模型和接口字段
   app/services/        读取、筛选、计算、汇总
   tests/               后端测试
-data/mock/             固定 JSON 样本及可重复生成脚本
-data/knowledge/        后续课程文档占位目录
+data/seed/             报表种子数据及可重复生成脚本（仅用于手动入库）
+data/knowledge/        第二课四份知识资料及来源说明
 docs/                  接口、授课指南、作业、后续规划
 ```
 
@@ -60,6 +69,14 @@ Copy-Item .env.example .env.local
 ```
 
 `.env.local` 中的 `VITE_API_BASE_URL=http://127.0.0.1:8000` 是报表请求地址。未配置时同样使用该本地默认值；修改后重启 Vite，构建版需要重新构建。前端环境变量会进入客户端，不要放密钥。
+
+后端需要教师提供的 `backend/.env` 才能连接远程 Supabase 和模型服务。首次建立报表表时，由教师在仓库根目录依次执行以下幂等命令；应用启动不会自动建表或导入数据，学员使用已经入库的共享数据时不执行这些命令：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-init
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-seed
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-check
+```
 
 ## 启动和查看
 
@@ -106,11 +123,11 @@ Set-Location D:\marketing-agent\marketing-agent\frontend
 
 默认日期为 **2026-09-01 至 2026-09-07**，包含 3 个计划、21 条记录；完整汇总为展现 **48,480**、点击 **1,131**、消费 **¥2,268.10**、转化 **30**。重置会恢复这一范围，不会跳到当前日期。
 
-Mock 数据共 **61 条**，已追加 **2026-09-08 至 2026-09-21** 的 40 条记录。将结束日期改为 **2026-09-21** 并查询即可查看全部数据；运行 `python data/mock/generate.py` 可重新生成。
+远程表 `marketing_agent.campaign_daily_reports` 当前保存 **61 条课程样本**，范围为 **2026-09-01 至 2026-09-21**。将结束日期改为 **2026-09-21** 即可查看全部数据。`data/seed/campaigns.json` 是可重复入库的数据源；它不是页面运行时直接读取的文件，也不是真实百度推广数据。
 
 ## 架构与教学要点
 
-Vue 只提交筛选并展示结果，后端从 `data/mock/campaigns.json` 读取记录，再筛选、计算、汇总。金额以字符串存储，Python Decimal 计算；接口金额仍是字符串，点击率为小数，零分母为 null。汇总比率使用汇总分子/分母重新计算。
+Vue 只提交筛选并展示结果，后端使用参数化 SQL 从 `marketing_agent.campaign_daily_reports` 查询记录，再用 Python 计算每行比率和汇总。金额由 PostgreSQL `numeric(14,2)` 读为 Decimal；接口金额是字符串，点击率为小数，零分母为 null。汇总比率使用汇总分子/分母重新计算。
 
 `App.vue` 使用 AbortController 取消上一个查询，并用请求序号保护结果、错误和 loading 状态；失败或加载期间隐藏旧结果，防止把旧数据误认为新查询结果。请求超时 15 秒，重试使用最后提交的条件。
 
@@ -178,6 +195,6 @@ Invoke-RestMethod 'http://127.0.0.1:8000/api/reports/campaigns?start_date=2026-0
 - [接口契约](docs/api-contract.md)：参数、单位、响应与错误。
 - [导师 60 分钟授课指南](docs/lesson-1-guide.md)：每段时间打开的文件及演示动作。
 - [学员课后任务](docs/lesson-1-homework.md)：提交要求及验收标准。
-- [后续项目规划](docs/project-roadmap.md)：尚未实现的 RAG、LangGraph、评测和 Docker。
+- [后续项目规划](docs/project-roadmap.md)：第二课状态及后续 LangGraph、评测和 Docker。
 
-没有创建教学标签、自动提交或推送 Git，也没有提供删减版或 TODO 练习版。
+没有创建教学标签、自动提交或推送 Git。学生包将在教师确认全部功能后再统一生成。

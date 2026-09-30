@@ -1,17 +1,37 @@
-import json
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
-from pathlib import Path
 
+from sqlalchemy import text
+
+from app.database import database
 from app.models import CampaignReport, CampaignSource, ReportResponse, ReportSummary
+from app.rag_config import get_settings
 
-DATA_PATH = Path(__file__).resolve().parents[3] / 'data' / 'mock' / 'campaigns.json'
 CENT = Decimal('0.01')
 
 
-def load_campaigns() -> list[CampaignSource]:
-    with DATA_PATH.open(encoding='utf-8') as source:
-        return [CampaignSource.model_validate(row) for row in json.load(source)]
+def load_campaigns(start_date: date | None, end_date: date | None, keyword: str) -> list[CampaignSource]:
+    clauses = []
+    parameters = {}
+    if start_date is not None:
+        clauses.append('report_date >= :start_date')
+        parameters['start_date'] = start_date
+    if end_date is not None:
+        clauses.append('report_date <= :end_date')
+        parameters['end_date'] = end_date
+    keyword = keyword.strip()
+    if keyword:
+        clauses.append('strpos(lower(campaign_name), lower(:keyword)) > 0')
+        parameters['keyword'] = keyword
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ''
+    statement = text(f'''SELECT report_date AS date, campaign_id, campaign_name,
+        impressions, clicks, cost, conversions
+        FROM marketing_agent.campaign_daily_reports
+        {where}
+        ORDER BY report_date, campaign_id''')
+    with database(get_settings()) as conn:
+        rows = conn.execute(statement, parameters).mappings().all()
+    return [CampaignSource.model_validate(dict(row)) for row in rows]
 
 
 def ratios(impressions: int, clicks: int, cost: Decimal) -> dict:
@@ -22,12 +42,7 @@ def ratios(impressions: int, clicks: int, cost: Decimal) -> dict:
 
 
 def get_campaign_reports(start_date: date | None, end_date: date | None, keyword: str) -> ReportResponse:
-    keyword = keyword.strip().casefold()
-    rows = [row for row in load_campaigns()
-            if (start_date is None or row.date >= start_date)
-            and (end_date is None or row.date <= end_date)
-            and keyword in row.campaign_name.casefold()]
-    rows.sort(key=lambda row: (row.date, row.campaign_id))
+    rows = load_campaigns(start_date, end_date, keyword)
     items = [CampaignReport(**row.model_dump(), **ratios(row.impressions, row.clicks, row.cost)) for row in rows]
     impressions = sum(row.impressions for row in rows)
     clicks = sum(row.clicks for row in rows)
