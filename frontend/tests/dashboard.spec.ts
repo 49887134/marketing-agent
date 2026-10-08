@@ -16,7 +16,8 @@ test('浏览器真实接口、筛选、空数据、零分母、重置', async ({
   await expect(page.locator('tbody')).toContainText('课程咨询推广')
   await page.getByLabel('计划名称关键词').fill('不存在')
   await page.getByRole('button', { name: '查询', exact: true }).click()
-  await expect(page.getByText('暂无匹配数据')).toBeVisible()
+  // 空结果也需要等待远程数据库，与同用例其他真实查询采用相同时限。
+  await expect(page.getByText('暂无匹配数据')).toBeVisible({ timeout: remoteReportTimeout })
   await page.getByRole('button', { name: '重置', exact: true }).click()
   await expect(page.locator('tbody tr')).toHaveCount(21, { timeout: remoteReportTimeout })
   const zero = page.locator('tbody tr').filter({ hasText: '2026-09-05' }).filter({ hasText: '新客' })

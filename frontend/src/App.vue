@@ -4,12 +4,14 @@ import ReportFilters from './components/ReportFilters.vue'
 import MetricCards from './components/MetricCards.vue'
 import ReportTable from './components/ReportTable.vue'
 import KnowledgePanel from './components/KnowledgePanel.vue'
+import AgentPanel from './components/AgentPanel.vue'
+import BaiduReportPanel from './components/BaiduReportPanel.vue'
 import { fetchReports } from './api/reports'
 import type { Filters, ReportResponse } from './types/reports'
 
 const defaults: Filters = { start_date: '2026-09-01', end_date: '2026-09-07', keyword: '' }
 const result = ref<ReportResponse | null>(null)
-const activePage = ref<'reports' | 'knowledge'>('reports')
+const activePage = ref<'reports' | 'knowledge' | 'agent' | 'baidu'>('reports')
 const loading = ref(false)
 const error = ref('')
 const applied = ref({ ...defaults })
@@ -58,12 +60,16 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
       <div class="nav-label">运营管理</div>
       <button class="nav-button" :class="{ 'nav-active': activePage === 'reports' }" @click="activePage = 'reports'">▦ 投放数据看板</button>
       <button class="nav-button" :class="{ 'nav-active': activePage === 'knowledge' }" @click="activePage = 'knowledge'">◈ 知识问答</button>
+      <button class="nav-button" :class="{ 'nav-active': activePage === 'agent' }" @click="activePage = 'agent'">◎ 智能分析</button>
+      <button class="nav-button" :class="{ 'nav-active': activePage === 'baidu' }" @click="activePage = 'baidu'">▤ 百度投放数据</button>
     </aside>
     <div class="workspace">
-      <header class="topbar"><span>工作台 / {{ activePage === 'reports' ? '投放报表' : '知识问答' }}</span><span class="environment"><i></i> 本地客户端</span></header>
+      <header class="topbar"><span>工作台 / {{ activePage === 'reports' ? '投放报表' : activePage === 'agent' ? '智能分析' : activePage === 'baidu' ? '百度投放数据' : '知识问答' }}</span><span class="environment"><i></i> 本地客户端</span></header>
       <main>
-        <div class="page-heading"><div><p class="eyebrow">{{ activePage === 'reports' ? 'CAMPAIGN OVERVIEW' : 'KNOWLEDGE ASSISTANT' }}</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">{{ activePage === 'reports' ? '查看计划每日表现，理解投放数据与核心指标。' : '检索投放知识，查看回答及其原文依据。' }}</p></div><span class="demo-badge">{{ activePage === 'reports' ? '报表数据' : '远程知识库' }}</span></div>
-        <div class="mobile-nav"><button @click="activePage = 'reports'">投放报表</button><button @click="activePage = 'knowledge'">知识问答</button></div>
+        <div class="page-heading"><div><p class="eyebrow">{{ activePage === 'reports' ? 'CAMPAIGN OVERVIEW' : activePage === 'agent' ? 'CAMPAIGN ANALYSIS AGENT' : activePage === 'baidu' ? 'BAIDU REPORT DATA' : 'KNOWLEDGE ASSISTANT' }}</p><h1>百度营销智能运营 Agent</h1><p class="subtitle">{{ activePage === 'reports' ? '查看计划每日表现，理解投放数据与核心指标。' : activePage === 'agent' ? '结合报表和知识规则，查看分析依据与实际工具执行记录。' : activePage === 'baidu' ? '按日期查询百度 API 返回的投放报告。' : '检索投放知识，查看回答及其原文依据。' }}</p></div><span class="demo-badge">{{ activePage === 'reports' ? '报表数据' : activePage === 'agent' ? '只读智能分析' : activePage === 'baidu' ? '百度 API · 只读查询' : '远程知识库' }}</span></div>
+        <div class="mobile-nav"><button @click="activePage = 'reports'">投放报表</button><button @click="activePage = 'knowledge'">知识问答</button><button @click="activePage = 'agent'">智能分析</button><button @click="activePage = 'baidu'">百度投放数据</button></div>
+        <BaiduReportPanel v-if="activePage === 'baidu'" />
+        <AgentPanel v-if="activePage === 'agent'" />
         <KnowledgePanel v-if="activePage === 'knowledge'" />
         <div v-show="activePage === 'reports'">
         <ReportFilters :defaults="defaults" @query="query" />
@@ -81,7 +87,7 @@ onBeforeUnmount(() => { ++requestId; controller?.abort() })
           </template>
         </div>
         </div>
-        <footer>{{ activePage === 'reports' ? '报表数据存储于远程数据库。' : '知识资料存储于远程数据库；检索与回答使用后端配置的模型服务。' }}</footer>
+        <footer>{{ activePage === 'reports' ? '报表数据存储于远程数据库。' : activePage === 'baidu' ? '百度投放数据由后端直连百度 API 查询。' : '知识资料存储于远程数据库；检索与回答使用后端配置的模型服务。' }}</footer>
       </main>
     </div>
   </div>

@@ -1,200 +1,257 @@
 # 百度营销智能运营 Agent
 
-第一、二节课的**教师参考实现**：浏览器与 Electron 投放数据看板，以及基于远程 Supabase/pgvector 的知识检索与 RAG 问答。报表使用**教学模拟数据**，知识文档为教学整理资料，没有连接真实百度推广账户，不执行真实调价。
+一个面向广告投放分析场景的全栈 AI 应用。项目将结构化报表查询、RAG 知识问答、模型工具调用和 LangGraph 工作流整合到同一套 Web / Electron 客户端中，并通过可验证引用、后端指标计算和严格工具边界控制模型输出。
 
-已实现：报表筛选与汇总、异常状态、Decimal 计算；知识文档切分、Embedding 接口、远程 pgvector 存储与检索、Chat 生成接口、引用 ID 校验、知识问答页面和启动脚本。**2026-09-30 已用真实千帆模型与 Supabase 完成入库、重复入库、三组问答及 top_k 对比验证：4 份文档、17 个片段，向量 384 维。** 具体证据及 TLS 边界见第二课验证记录。未实现：LangGraph、权限系统、Docker 部署、桌面安装包、后端自动打包、微调、OCR/VLM。后续规划见 [项目路线图](docs/project-roadmap.md)。
+![Vue](https://img.shields.io/badge/Vue-3.5-42b883?logo=vuedotjs&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.12-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169e1?logo=postgresql&logoColor=white)
+![LangGraph](https://img.shields.io/badge/Agent-LangGraph-1f2937)
+![Electron](https://img.shields.io/badge/Electron-44-47848f?logo=electron&logoColor=white)
 
-## 第二课先看这里
+## 项目亮点
 
-- [运行与配置](docs/lesson-2-run.md)：教师配置 Supabase 和两个独立模型服务，手动初始化、入库及真实验证。
-- [60 分钟教师指南](docs/lesson-2-guide.md)：演示 → 原理与代码 → 学员运行 → 观察与答疑，不安排复盘和作业。
-- [学生运行说明](docs/student-readme.md)：学员使用已入库远程知识库；真实 .env 由教师单独提供。
-- [知识接口](docs/knowledge-api.md)、[第二课验证记录](docs/lesson-2-verification.md)：接口字段与实际验证边界。
+- **有边界的 AI Agent**：模型通过原生 Tool Calling 自主选择报表查询或知识检索，LangGraph 负责状态、条件分支、错误处理与终止条件。
+- **可核验的分析结果**：报表数字来自后端实际查询，知识结论必须引用本次检索片段；前端同时展示工具调用记录、数据依据和原文引用。
+- **RAG 知识问答**：文档切分后写入 Supabase PostgreSQL + pgvector，使用百度千帆 Embedding 检索并由 Chat 模型生成带引用回答。
+- **真实百度营销报表接入**：独立查询新兴趣报表和地域报表，支持服务端分页、业务状态校验、精度保留、超时与认证失败处理。
+- **浏览器与桌面端复用**：Vue 页面同时运行于 Vite 浏览器环境和 Electron 桌面客户端。
+- **安全与可靠性约束**：认证信息只存在后端；不执行模型生成的 SQL、Python 或 Shell；不开放预算修改或广告账户写操作。
 
-在项目根目录运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action install` 安装锁定依赖；分别用 `-Action backend` 和 `-Action frontend` 启动。详情与前置条件见运行说明。学生包清单由 `scripts/lesson2-package-files.json` 维护；本轮待教师确认全部功能后再生成压缩包。
+## 功能模块
 
-## 技术栈与目录
+| 模块 | 主要能力 | 数据来源 |
+| --- | --- | --- |
+| 投放数据看板 | 日期与计划筛选、日报明细、汇总指标、零分母处理 | PostgreSQL 演示样本 |
+| 知识问答 | 向量检索、答案生成、引用片段和相似度展示 | Supabase / pgvector + 百度千帆 |
+| 智能分析 | 模型自主选工具、LangGraph 编排、事实与引用校验、能力边界提示 | 样本报表 + 知识库 |
+| 百度投放数据 | 新兴趣报表、地域报表、服务端分页、空数据与失败重试 | 百度营销 API |
 
-Vue 3 Composition API + TypeScript + Vite，使用原生 HTML/CSS 实现轻量管理后台；Electron 复用同一套页面；Python + FastAPI + Pydantic 提供报表与知识问答接口；Supabase PostgreSQL/pgvector 存储课程样本报表和知识向量。
+百度投放数据是独立功能。当前 Agent 的 `query_report` 查询项目报表表，不会把真实百度账户数据自动送入模型，也不会修改广告预算或投放设置。
+
+## 架构
+
+```mermaid
+flowchart LR
+    UI[Vue 3 / Electron] --> API[FastAPI]
+    API --> Report[报表服务]
+    API --> RAG[RAG 服务]
+    API --> Agent[LangGraph Agent]
+    API --> Baidu[百度营销报表服务]
+    Report --> PG[(PostgreSQL)]
+    RAG --> Vector[(pgvector)]
+    RAG --> Qianfan[百度千帆模型]
+    Agent --> Decide{模型工具选择}
+    Decide -->|query_report| Report
+    Decide -->|search_knowledge| RAG
+    Baidu --> MarketingAPI[百度营销 API]
+```
+
+智能分析流程：
 
 ```text
-.tools/                 仓库内 Node 22 工具链及锁文件
-scripts/npm-local.cmd   用项目 Node 运行本机 npm 的 Windows 入口
-frontend/
-  electron/main.cjs     桌面窗口、安全设置、静态资源协议
-  src/api/             HTTP 请求封装
-  src/components/      筛选、指标和表格
-  src/App.vue          查询流程和页面状态
-  tests/               浏览器及 Electron 联调测试
+用户问题与筛选条件
+        ↓
+模型决定是否调用工具
+        ↓
+后端校验工具白名单和参数
+        ↓
+执行报表查询 / 知识检索
+        ↓
+工具结果返回模型，判断依据是否充分
+        ↓
+生成分析并校验事实 ID、引用 ID 和能力边界
+        ↓
+返回分析、数据依据、知识引用和实际执行记录
+```
+
+Agent 最多执行 3 次工具调用、4 轮模型决策和 12 个图步骤，总执行时间限制为 120 秒。单个工具失败时保留其他成功依据，并明确说明失败对结论的影响。
+
+## 关键工程设计
+
+### 指标由后端计算
+
+金额使用 `Decimal`，接口以字符串返回，避免浮点误差。CTR、CPC 等指标由后端基于汇总分子和分母重新计算，模型只负责解释。分母为零时返回 `null`，前端显示 `—`。
+
+### 引用与事实约束
+
+知识工具只负责检索，不在工具内部再次生成答案。最终分析中的 `citation_ids` 必须属于本次检索结果，`fact_ids` 必须属于本次报表查询结果；校验失败的生成内容不会展示。
+
+### 工具调用边界
+
+Agent 仅开放：
+
+- `query_report`：只读查询项目报表。
+- `search_knowledge`：只读检索知识片段。
+
+模型不能指定外部 URL、执行任意 SQL 或调用系统命令。工具参数由 Pydantic 严格校验，额外字段直接拒绝。
+
+### 请求一致性
+
+前端使用 `AbortController` 取消旧请求，并用请求序号防止旧响应覆盖新结果。切换百度报表页签或修改日期后会清空旧结果并将分页重置到第一页。
+
+## 技术栈
+
+**前端**
+
+- Vue 3、TypeScript、Vite
+- Electron
+- Playwright
+
+**后端与 AI**
+
+- Python 3.12、FastAPI、Pydantic
+- LangGraph 原生状态图
+- 百度千帆 Chat / Embedding API
+- HTTPX、SQLAlchemy、psycopg
+
+**数据层**
+
+- Supabase PostgreSQL
+- pgvector
+
+## 项目结构
+
+```text
 backend/
-  app/main.py          应用初始化和 CORS
-  app/routes/          参数校验和路由
-  app/models.py        数据模型和接口字段
-  app/services/        读取、筛选、计算、汇总
-  tests/               后端测试
-data/seed/             报表种子数据及可重复生成脚本（仅用于手动入库）
-data/knowledge/        第二课四份知识资料及来源说明
-docs/                  接口、授课指南、作业、后续规划
+  app/
+    routes/                 FastAPI 路由
+    services/               报表、知识检索、Agent 与百度报告服务
+    agent_models.py         Agent 输入、工具参数和分析结构
+    baidu_report_models.py  百度报告查询与响应校验
+    rag_config.py           数据库及模型配置
+    main.py                 应用入口与错误处理
+  tests/                    后端测试
+  requirements.lock        Python 完整依赖锁
+frontend/
+  electron/main.cjs        Electron 主进程与安全设置
+  src/api/                 前端请求封装
+  src/components/          报表、知识问答和智能分析组件
+  src/types/               TypeScript 接口类型
+  tests/                   浏览器与 Electron 测试
+data/
+  knowledge/               知识库源文件
+  seed/                    可重复生成的样本报表
+scripts/
+  project.ps1              检查、安装和启动入口
 ```
 
-## 环境与版本选择
+## 本地运行
 
-实际检查环境：Windows 11（系统内核 10.0.26200）、PowerShell、系统 Node.js **20.19.0**、npm **10.8.2**、Python **3.12.10**。下文命令均用于 Windows PowerShell，并注明执行目录。不要全局 pip 安装，也无需激活虚拟环境。
+已验证环境：Windows 11、Python 3.12、Node.js 20.19+、npm 10。Electron 使用仓库内安装的 Node 22 工具链，不修改系统全局环境。
 
-Vite 7 支持系统 Node 20.19，但当前 Electron 44 安装工具要求 Node >=22.12。试用兼容 Node 20 的旧 Electron 时，npm audit 报告了已知高危漏洞，因此最终选择 **Electron 44.4.5 + 仓库内 Node 22.22.0**。项目 Node 只装在 `.tools/node_modules`，`scripts/npm-local.cmd` 仅为子进程设置 PATH，不改变系统 Node、注册表或全局安装。脚本使用本机既有 npm CLI，本机验证版本为 10.8.2。
-
-前端完整版本由 `frontend/package-lock.json` 固定；Node 工具链由 `.tools/package-lock.json` 固定；后端版本由 `backend/requirements.lock` 固定，Python 3.12 为已验证版本。`requirements.in` 仅描述更新时的直接依赖范围，日常安装使用 lock。不要通过 `npm audit fix --force` 盲目更新教学工具链。
-
-参考：[Vite 环境要求](https://vite.dev/guide/)、[Electron 安全设置](https://www.electronjs.org/docs/latest/tutorial/security)。
-
-## 首次安装
-
-以下以当前仓库路径为例；其他机器替换仓库路径即可。
+### 1. 配置环境变量
 
 ```powershell
-# 仓库根目录：先安装项目局部 Node，使用现有系统 npm 即可
-Set-Location D:\marketing-agent\marketing-agent
-Set-Location .tools
-npm.cmd ci
-Set-Location ..
-
-# 仓库根目录：创建项目 Python 虚拟环境并按锁文件安装
-python -m venv backend/.venv
-.\backend\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock
-
-# frontend 目录：用局部 Node 安装前端依赖
-Set-Location frontend
-..\scripts\npm-local.cmd ci
-Copy-Item .env.example .env.local
+Copy-Item backend/.env.example backend/.env
+Copy-Item frontend/.env.example frontend/.env.local
 ```
 
-`.env.local` 中的 `VITE_API_BASE_URL=http://127.0.0.1:8000` 是报表请求地址。未配置时同样使用该本地默认值；修改后重启 Vite，构建版需要重新构建。前端环境变量会进入客户端，不要放密钥。
+编辑 `backend/.env`，填写自己的数据库和模型配置。需要查询真实百度投放数据时，再填写独立的百度营销认证：
 
-后端需要教师提供的 `backend/.env` 才能连接远程 Supabase 和模型服务。首次建立报表表时，由教师在仓库根目录依次执行以下幂等命令；应用启动不会自动建表或导入数据，学员使用已经入库的共享数据时不执行这些命令：
+```dotenv
+DATABASE_URL=postgresql+psycopg://...
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-init
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-seed
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lesson2.ps1 -Action report-check
+EMBEDDING_BASE_URL=https://qianfan.baidubce.com/v2
+EMBEDDING_API_KEY=
+EMBEDDING_MODEL=embedding-v1
+EMBEDDING_DIMENSIONS=384
+
+CHAT_BASE_URL=https://qianfan.baidubce.com/v2
+CHAT_API_KEY=
+CHAT_MODEL=
+
+BAIDU_MARKETING_ACCESS_TOKEN=
+BAIDU_MARKETING_USER_NAME=
 ```
 
-## 启动和查看
+真实 `.env` 已被 `.gitignore` 排除。所有密钥仅由 FastAPI 后端读取，不要放入 `VITE_*` 变量或提交到仓库。
 
-**终端 A：后端（backend 目录）**
+### 2. 安装依赖
+
+在仓库根目录执行：
 
 ```powershell
-Set-Location D:\marketing-agent\marketing-agent\backend
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/project.ps1 -Action check
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/project.ps1 -Action install
 ```
 
-接口文档：`http://127.0.0.1:8000/docs`。可通过计划报表接口 `http://127.0.0.1:8000/api/reports/campaigns` 确认服务和数据均可访问。本地服务默认只监听回环地址。
+### 3. 启动后端与前端
 
-**终端 B：以下选择一种前端运行方式（frontend 目录）**
+终端一：
 
 ```powershell
-Set-Location D:\marketing-agent\marketing-agent\frontend
-
-# 浏览器开发：打开 http://127.0.0.1:5173
-..\scripts\npm-local.cmd run dev
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/project.ps1 -Action backend
 ```
 
+终端二：
+
 ```powershell
-# Electron 开发：自动启动 Vite，等待就绪后打开桌面窗口
-# 执行目录：frontend。不要同时运行另一份占用 5173 的 dev 服务。
-..\scripts\npm-local.cmd run electron:dev
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/project.ps1 -Action frontend
 ```
 
-```powershell
-# 前端类型检查和构建；只产出 frontend/dist，不生成桌面安装包
-# 执行目录：frontend
-..\scripts\npm-local.cmd run build
+访问：
 
-# 使用构建产物启动 Electron，不需要 Vite；终端 A 的后端仍须运行
-..\scripts\npm-local.cmd run electron:start
+- Web：<http://127.0.0.1:5173>
+- FastAPI 文档：<http://127.0.0.1:8000/docs>
+
+启动 Electron：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/project.ps1 -Action electron
 ```
 
-```powershell
-# 可选：在浏览器预览构建产物，打开 http://127.0.0.1:4173
-# 执行目录：frontend，先执行 build
-..\scripts\npm-local.cmd run preview
-```
+应用启动不会自动创建表、导入样本或重建向量库。运行前需要准备与项目模型匹配的 PostgreSQL 表和 pgvector 索引。
 
-若已启动 Vite，另一个 frontend 终端可以用 `..\scripts\npm-local.cmd exec -- electron . --dev` 直接打开开发窗口。`electron:dev` 中关闭桌面窗口会结束它自己启动的 Vite；其他前台服务用 Ctrl+C 停止。
+## 主要 API
 
-默认日期为 **2026-09-01 至 2026-09-07**，包含 3 个计划、21 条记录；完整汇总为展现 **48,480**、点击 **1,131**、消费 **¥2,268.10**、转化 **30**。重置会恢复这一范围，不会跳到当前日期。
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/reports/campaigns` | 查询项目投放日报与汇总 |
+| GET | `/api/knowledge/status` | 检查知识库状态 |
+| POST | `/api/knowledge/search` | 仅检索知识片段 |
+| POST | `/api/knowledge/ask` | 生成带引用的知识回答 |
+| GET | `/api/agent/metadata` | 获取 Agent 数据范围与执行限制 |
+| POST | `/api/agent/analyze` | 执行智能分析流程 |
+| GET | `/api/baidu-reports/status` | 检查百度营销认证是否配置 |
+| POST | `/api/baidu-reports/query` | 查询新兴趣或地域报表 |
 
-远程表 `marketing_agent.campaign_daily_reports` 当前保存 **61 条课程样本**，范围为 **2026-09-01 至 2026-09-21**。将结束日期改为 **2026-09-21** 即可查看全部数据。`data/seed/campaigns.json` 是可重复入库的数据源；它不是页面运行时直接读取的文件，也不是真实百度推广数据。
-
-## 架构与教学要点
-
-Vue 只提交筛选并展示结果，后端使用参数化 SQL 从 `marketing_agent.campaign_daily_reports` 查询记录，再用 Python 计算每行比率和汇总。金额由 PostgreSQL `numeric(14,2)` 读为 Decimal；接口金额是字符串，点击率为小数，零分母为 null。汇总比率使用汇总分子/分母重新计算。
-
-`App.vue` 使用 AbortController 取消上一个查询，并用请求序号保护结果、错误和 loading 状态；失败或加载期间隐藏旧结果，防止把旧数据误认为新查询结果。请求超时 15 秒，重试使用最后提交的条件。
-
-Electron 开启 `contextIsolation`、`sandbox`，关闭 `nodeIntegration`，没有 preload、任意文件或命令执行 IPC。构建版通过受限的 `app://dashboard` 协议访问 dist；Vite `base: './'` 使用相对资源路径。本阶段单页面没有前端路由器；以后增加路由时可采用 hash 路由。
-
-后端 CORS 显式允许本机 5173/4173 浏览器来源及 `app://dashboard`，不开放 `*` 或 `null`。自定义端口时，在 backend 终端启动前配置完整白名单，例如：
+## 验证
 
 ```powershell
-$env:CORS_ORIGINS = 'http://127.0.0.1:5173,http://localhost:5173,app://dashboard'
-```
-
-## 验证方法
-
-```powershell
-# backend 目录：筛选、计算、参数校验和 CORS
+# 后端
+Set-Location backend
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m pip check
 ```
 
 ```powershell
-# frontend 目录：构建会先执行类型检查
-..\scripts\npm-local.cmd run typecheck
+# 前端
+Set-Location frontend
 ..\scripts\npm-local.cmd run build
 ..\scripts\npm-local.cmd run test:ui
 ```
 
-UI 测试配置使用本机 Google Chrome（无需下载 Playwright 浏览器），并自动启动后端与 Vite，也可以复用已运行的本项目服务。需先安装 Python 依赖、前端依赖并构建 dist；执行时会打开 Electron 窗口并自动关闭。没有 Chrome 时可安装 Chrome，或把 `playwright.config.ts` 的 channel 改为本机 `msedge`；本次不代表已验证其他浏览器。截图位于根目录 `artifacts/`，失败产物位于 `frontend/test-results/`，均不提交 Git。
+当前后端测试覆盖报表计算、RAG 引用、Agent 工具边界、非法参数、调用次数和超时，以及百度报告的分页、空数据、零值、认证失败和响应结构校验。UI 测试覆盖浏览器和 Electron 的加载、失败、重试、重复提交及旧请求保护。
 
-Electron 44 首次启动会下载对应桌面运行时，需要可用网络；可课前在 frontend 目录执行 `..\scripts\npm-local.cmd exec -- install-electron` 提前下载，再开始演示或 UI 测试。
+百度营销真实联调曾验证：新兴趣报表可查询；地域报表在同一日期快照下返回 763 条、4 页，第一页和第二页各 200 条、末页 163 条。该数量只代表当次账户与日期范围，不写入业务逻辑。
 
-如果自动下载长时间停滞，仓库提供 Windows x64 备用下载脚本（从根目录执行），下载后必须匹配已锁定 Electron 包内的 SHA-256 才会解压：
+## 安全与数据说明
 
-```powershell
-# 仓库根目录；默认从 GitHub 官方发布下载
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-electron.ps1
-# GitHub 下载过慢时，可选择镜像；仍使用同一个官方包校验值
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-electron.ps1 -UseMirror
-```
+- 仓库中的投放样本和知识资料用于功能演示，不代表真实业务账户。
+- 百度营销认证、数据库连接和模型密钥只保存在本地后端环境变量中。
+- 百度投放数据直接查询后返回前端，不写入项目数据库。
+- 系统不会自动调价、修改预算、创建广告或执行其他账户操作。
+- 知识检索相似度用于排序，不等同于答案正确率。
+- 缺少收入、毛利和完整成本时，Agent 不生成盈利排名或确定性预算结论。
 
-该执行策略仅作用于本次脚本进程，不修改系统策略。文件只写入仓库 `artifacts` 与 `frontend/node_modules/electron`。当前机器首次下载遇到停滞，使用了这一备用方式。
+## 可继续演进
 
-```powershell
-# 任意目录：后端启动后执行真实 HTTP 验证
-Invoke-RestMethod http://127.0.0.1:8000/api/reports/campaigns
-Invoke-RestMethod 'http://127.0.0.1:8000/api/reports/campaigns?start_date=2026-09-02&end_date=2026-09-04&keyword=%E8%AF%BE%E7%A8%8B'
-```
+- 增加登录、租户隔离、RBAC 与接口限流。
+- 将外部调用改造成可恢复的后台任务，并加入重试、熔断和监控。
+- 建立离线评测集，持续评估工具选择、引用准确性和分析质量。
+- 为真实百度报表增加增量同步、稳定快照和跨页一致性机制。
+- 增加容器化部署、CI/CD、可观测性和桌面安装包。
 
-手工验收：默认 21 条；“课程”与 9 月 2–4 日返回 3 条；不存在关键词显示空数据；开始晚于结束显示错误；关闭后端后查询显示连接失败，重启后重试恢复。查看 9 月 2 日新客计划（CTR 为 0、CPC 为“—”）与 9 月 5 日新客计划（两个比率均为“—”）。
+## 面试说明
 
-具体已执行结果、限制见 [验证记录](docs/verification.md)。
-
-## 常见问题
-
-- **Electron 安装时 Node 不兼容**：不要在 frontend 直接用系统 Node 20 执行 npm install。先在 `.tools` 执行 `npm.cmd ci`，随后使用 `scripts/npm-local.cmd`；无需升级全局 Node。安装失败重试同一 ci 命令，网络需能访问 npm registry 和 Electron 二进制下载源。
-- **PowerShell 禁止运行 npm.ps1**：文档显式使用 `.cmd`，不需要改变执行策略。Python 直接运行虚拟环境解释器，不需要 Activate.ps1。
-- **页面连接失败**：先访问 `/docs` 或 `/api/reports/campaigns`，再查 Network；核对 8000 端口、`.env.local` 及 CORS 来源。修改前端环境配置后必须重启或重新构建。`localhost` 与 `127.0.0.1` 是不同来源。
-- **端口被占用**：Vite 设置 strictPort，避免自动换端口后 CORS 失配；停止自己重复启动的服务。不要随意结束不认识的进程。
-- **Electron 白屏**：构建模式须先 build，并用 electron:start 加载 `app://dashboard`，不要双击 dist/index.html。后端未启动应显示错误状态，不应白屏。
-- **日期没有数据**：样本固定在 2026 年 9 月，点击重置；清空日期可查询不限日期范围。
-- **中文乱码**：源文件使用 UTF-8；若旧 PowerShell 显示异常，用编辑器查看 UTF-8 文件，浏览器接口和页面也使用 UTF-8。
-- **测试提示 httpx 弃用警告**：当前 Starlette 对 TestClient 的 httpx 适配提示未来迁移到 httpx2；现有测试仍可运行，此提示不影响运行服务。升级教学依赖时统一评估并更新锁文件。
-
-## 教学文档
-
-- [接口契约](docs/api-contract.md)：参数、单位、响应与错误。
-- [导师 60 分钟授课指南](docs/lesson-1-guide.md)：每段时间打开的文件及演示动作。
-- [学员课后任务](docs/lesson-1-homework.md)：提交要求及验收标准。
-- [后续项目规划](docs/project-roadmap.md)：第二课状态及后续 LangGraph、评测和 Docker。
-
-没有创建教学标签、自动提交或推送 Git。学生包将在教师确认全部功能后再统一生成。
+这个项目重点展示的不是一个聊天框，而是如何把大模型放进可控的软件流程：模型负责语义判断和解释，后端工具负责取得权威数据，LangGraph 管理流程，Pydantic 和业务规则负责约束输入输出，前端则把实际执行记录和证据完整呈现给用户。

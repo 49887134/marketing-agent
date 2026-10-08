@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.reports import router
 from app.routes.knowledge import router as knowledge_router
+from app.routes.agent import router as agent_router
+from app.routes.baidu_reports import router as baidu_reports_router
+from app.baidu_report_config import BaiduReportError
 from app.rag_config import RagError
 from fastapi.responses import JSONResponse
 
@@ -17,8 +20,11 @@ app.add_middleware(
 )
 app.include_router(router)
 app.include_router(knowledge_router)
+app.include_router(agent_router)
+app.include_router(baidu_reports_router)
 
 
 @app.exception_handler(RagError)
+@app.exception_handler(BaiduReportError)
 async def rag_error_handler(request, error: RagError):
     return JSONResponse(status_code=error.status_code, content={'detail': {'code': error.code, 'message': error.message}})
